@@ -22,41 +22,40 @@ class MySideBar(QMainWindow, Ui_mainmenu):
         super().__init__()
         self.setupUi(self)
 
-        # Konfigurasi serial
-        self.serial_connection = serial.Serial(serial_port, baud_rate, timeout=1)
-        self.serial_connection.flush()
+        self.serial_port = serial_port
+        self.baud_rate = baud_rate
+        self.sort = sort
+        self.weight = weight
+        self.mode = mode
+        self.time = time
 
         self.icon_name_widget.setHidden(True)
 
         self.tv_name_patient.setText(name)
 
-        # Cetak data ke terminal
-
-        if sort == "Kepala":
-            sort1 = 1
-        elif sort == "Pinggang":
-            sort1 = 2
-
-        if mode == "Langsung":
-            mode1 = 1
-        elif mode == "Per Step":
-            mode1 = 2
+        # Inisialisasi komunikasi serial
+        try:
+            self.ser = serial.Serial(self.serial_port, self.baud_rate, timeout=1)
+            print(f"Terhubung ke {self.serial_port} dengan baud rate {self.baud_rate}")
+        except serial.SerialException as e:
+            print(f"Kesalahan serial: {e}")
+            self.ser = None  # Pastikan port serial tidak digunakan jika gagal
 
         print("Data Pasien dari Halaman Pertama:")
         print(f"Nama Pasien: {name}")
         print(f"Berat Pasien: {weight} kg")
-        print(f"Jenis Terapi: {sort} == {sort1}")
-        print(f"Metode Terapi: {mode} == {mode1}")
+        print(f"Jenis Terapi: {sort}")
+        print(f"Metode Terapi: {mode}")
         print(f"Waktu Terapi: {time} menit")
         print(f"serial_port: {serial_port}")
         print(f"baud_rate: {baud_rate}")
 
-        print("Berpindah ke halaman kedua...")
+        print("Berpindah ke halaman kedua... \n\n")
 
         self.btn_dashboard_1.clicked.connect(self.switch_to_dashboardPage)
         self.btn_dashboard_2.clicked.connect(self.switch_to_dashboardPage)
 
-        # self.btn_start.clicked.connect(self.)
+        self.btn_start.clicked.connect(self.send_data_to_esp)
         """
         # Inisialisasi timer
         self.timer = QTimer()
@@ -73,22 +72,166 @@ class MySideBar(QMainWindow, Ui_mainmenu):
     def switch_to_dashboardPage(self):
         self.stackedWidget.setCurrentIndex(0)
 
-    def send_data_to_esp(self, weight, sort1, mode1, time):
-        """
-        Mengirim data ke ESP melalui serial
-        """
-        try:
-            # Format data dalam JSON-like string
-            data_to_send = f"{{'weight': {weight}, 'sort': {sort1}, 'mode': {mode1}, 'time': {time}}}"
-            print(f"Mengirim data ke ESP: {data_to_send}")
+    def send_data_to_esp(self):
+        if not self.ser or not self.ser.is_open:
+            print("Port serial belum terbuka atau tidak tersedia.")
+            return
 
-            # Kirim data ke ESP
-            self.serial_connection.write(data_to_send.encode("utf-8"))
+        command = self.sort
+        mode1 = self.mode
+        weight1 = str(self.weight)  # Konversi weight ke string
+        time1 = str(self.time)  # Konversi time ke string
+
+        try:
+            # Kirim command
+            if command == "Kepala":
+                self.ser.write(b"A")
+                print("Perintah 'A' telah dikirim")
+                self.read_response()
+
+            elif command == "Pinggang":
+                self.ser.write(b"B")
+                print("Perintah 'B' telah dikirim")
+                self.read_response()
+
+            # Kirim mode
+            if mode1 == "Langsung":
+                self.ser.write(b"C")
+                print("Perintah 'C' telah dikirim")
+                self.read_response()
+
+            elif mode1 == "Per Step":
+                self.ser.write(b"D")
+                print("Perintah 'D' telah dikirim")
+                self.read_response()
+
+            # Kirim berat
+            weight_command = f"W{weight1}\n".encode("utf-8")  # Format dengan prefix 'W'
+            self.ser.write(weight_command)
+            print(f"Berat {weight1} kg telah dikirim")
+            self.read_response()
+
+            # Kirim waktu
+            time_command = f"T{time1}\n".encode("utf-8")  # Format dengan prefix 'T'
+            self.ser.write(time_command)
+            print(f"Waktu {time1} menit telah dikirim")
+            self.read_response()
+
         except Exception as e:
-            print(f"Error saat mengirim data ke ESP: {e}")
-        finally:
-            # Tutup koneksi setelah pengiriman
-            self.serial_connection.close()
+            print(f"Kesalahan: {e}")
+
+    def read_response(self):
+        """Baca respons dari ESP32."""
+        try:
+            response = self.ser.readline()
+            decoded_response = response.decode("utf-8").strip()
+            if decoded_response:
+                print(f"Respons dari ESP32: {decoded_response}")
+        except UnicodeDecodeError:
+            print("Respons tidak dapat didekode, mungkin bukan teks.")
+
+    def close_serial(self):
+        """Menutup komunikasi serial jika diperlukan."""
+        if self.ser and self.ser.is_open:
+            self.ser.close()
+            print("Komunikasi serial ditutup.")
+
+    # def send_data_to_esp(self):
+
+    #     port = self.serial_port
+    #     baud_rate = self.baud_rate
+    #     command = self.sort
+    #     mode1 = self.mode
+    #     weight1 = self.weight
+    #     time1 = self.time
+
+    #     try:
+    #         ser = serial.Serial(port, baud_rate, timeout=1)
+    #         print(f"Terhubung ke {port} dengan baud rate {baud_rate}")
+
+    #         # while True:
+    #         if command == "Kepala":
+    #             ser.write(b"A")
+    #             print("Perintah 'A' telah dikirim")
+
+    #             response = ser.readline()
+
+    #             try:
+    #                 decoded_response = response.decode("utf-8").strip()
+    #                 if decoded_response:
+    #                     print(f"Respons dari ESP32: {decoded_response}")
+    #                     print(f"Led ON \n")
+
+    #             except UnicodeDecodeError:
+    #                 print(
+    #                     "Respons Jenis Terapi Kepala tidak dapat didekode, mungkin bukan teks."
+    #                 )
+
+    #         elif command == "Pinggang":
+    #             ser.write(b"B")
+    #             print("Perintah 'B' telah dikirim")
+
+    #             response = ser.readline()
+
+    #             try:
+    #                 decoded_response = response.decode("utf-8").strip()
+    #                 if decoded_response:
+    #                     print(f"Respons dari ESP32: {decoded_response}")
+    #                     print(f"Led ON \n")
+
+    #             except UnicodeDecodeError:
+    #                 print(
+    #                     "Respons Jenis Terapi Pinggang tidak dapat didekode, mungkin bukan teks."
+    #                 )
+
+    #         elif mode1 == "Langsung":
+    #             ser.write(b"C")
+    #             print("Perintah 'C' telah dikirim")
+
+    #             response = ser.readline()
+
+    #             try:
+    #                 decoded_response = response.decode("utf-8").strip()
+    #                 if decoded_response:
+    #                     print(f"Respons dari ESP32: {decoded_response}")
+    #                     print(f"Led ON \n")
+
+    #             except UnicodeDecodeError:
+    #                 print(
+    #                     "Respons Mode Terapi Langsung tidak dapat didekode, mungkin bukan teks."
+    #                 )
+
+    #         elif mode1 == "Per Step":
+    #             ser.write(b"D")
+    #             print("Perintah 'D' telah dikirim")
+
+    #             response = ser.readline()
+
+    #             try:
+    #                 decoded_response = response.decode("utf-8").strip()
+    #                 if decoded_response:
+    #                     print(f"Respons dari ESP32: {decoded_response}")
+    #                     print(f"Led ON \n")
+
+    #             except UnicodeDecodeError:
+    #                 print(
+    #                     "Respons Mode Per Step Langsung tidak dapat didekode, mungkin bukan teks."
+    #                 )
+
+    #         else:
+    #             print("Perintah tidak dikenali.")
+
+    #     except serial.SerialException as e:
+    #         print(f"Kesalahan serial: {e}")
+
+    #     except Exception as e:
+    #         print(f"Kesalahan: {e}")
+
+    #     finally:
+    #         # Menutup komunikasi serial
+    #         if "ser" in locals() and ser.is_open:
+    #             ser.close()
+    #             print("Komunikasi serial ditutup.")
 
     """
     def update_real_time_data(self):
