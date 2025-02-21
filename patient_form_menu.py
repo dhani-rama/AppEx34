@@ -18,7 +18,7 @@ class MyPatientForm(QMainWindow, Ui_MainWindow):
         sort = self.et_sort_patient.currentText()
         mode = self.et_mode_patient.currentText()
         time = self.et_time_patient.text()
-        serial_port = "COM5"
+        serial_port = "COM3"
         baud_rate = 115200
 
         # Pindah ke halaman kedua dan parsing data
