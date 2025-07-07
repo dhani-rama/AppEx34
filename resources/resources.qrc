@@ -1,0 +1,31 @@
+<RCC>
+    <qresource prefix="/">
+        <file>src/images/dashboard.png</file>
+        <file>src/images/dashboard_white.png</file>
+        <file>src/images/image.png</file>
+        <file>src/images/log_out.png</file>
+        <file>src/images/log_out_white.png</file>
+        <file>src/images/menu.png</file>
+        <file>src/images/messages.png</file>
+        <file>src/images/messages_white.png</file>
+        <file>src/images/notifications.png</file>
+        <file>src/images/notifications_white.png</file>
+        <file>src/images/profile.png</file>
+        <file>src/images/profile_pic.png</file>
+        <file>src/images/profile_white.png</file>
+        <file>src/images/search.png</file>
+        <file>src/images/settings.png</file>
+        <file>src/images/settings_white.png</file>
+        <file>src/images/heti.png</file>
+        <file>src/images/icon delete.png</file>
+        <file>src/images/icon edit.png</file>
+        <file>src/images/img_daftar.png</file>
+        <file>src/images/Lambang ITS.png</file>
+        <file>src/images/img_daftar_3.png</file>
+        <file>src/images/heti-100.png</file>
+        <file>src/images/Lambang ITS 50.png</file>
+        <file>src/images/heti-50.png</file>
+        <file>src/images/animasi_form_terapi_200.png</file>
+        <file>src/images/arrow-right.png</file>
+    </qresource>
+</RCC>
